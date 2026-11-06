@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Queue Planner</title>
+  <meta name="description" content="Size a pool of workers with queueing theory and see how latency grows with utilization.">
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Queue Planner</h1>
+      <p class="sub">How many workers do you need to keep tail latency under a target? Exact M/M/c math, in your browser.</p>
+    </div>
+    <div class="actions">
+      <button type="button" id="share">Copy share link</button>
+      <button type="button" id="reset">Reset</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <form id="form" class="panel" autocomplete="off">
+      <fieldset>
+        <legend>Workload</legend>
+        <label>Arrival rate (requests per second)<input type="number" name="arrivalRate" min="0" step="10"></label>
+        <label>Mean service time (ms)<input type="number" name="serviceMs" min="0.1" step="1"></label>
+      </fieldset>
+      <fieldset>
+        <legend>Pool</legend>
+        <label>Workers
+          <div class="stepper">
+            <button type="button" data-step="-1" aria-label="One fewer worker">&minus;</button>
+            <input type="number" name="workers" min="1" step="1">
+            <button type="button" data-step="1" aria-label="One more worker">+</button>
+          </div>
+        </label>
+      </fieldset>
+      <fieldset>
+        <legend>Target</legend>
+        <div class="grid2">
+          <label>Percentile
+            <select name="percentile">
+              <option value="50">p50</option><option value="90">p90</option><option value="95">p95</option>
+              <option value="99">p99</option><option value="99.9">p99.9</option>
+            </select>
+          </label>
+          <label>Latency target (ms)<input type="number" name="targetMs" min="1" step="5"></label>
+        </div>
+      </fieldset>
+      <p class="hint">A worker is anything that serves one request at a time: a thread, a process, a connection, a GPU slot. The model assumes random arrivals, exponential service times, and one shared queue. Real services with heavier tails do somewhat worse, so treat the answer as a floor.</p>
+    </form>
+
+    <section class="results">
+      <div id="cards" class="cards"></div>
+      <ul id="warnings" class="warnings" aria-live="polite"></ul>
+
+      <div class="panel">
+        <dl class="stats" id="stats"></dl>
+      </div>
+
+      <div class="panel">
+        <div class="chart-head">
+          <h2>Latency as load grows, with this many workers</h2>
+          <ul class="legend" id="legend"></ul>
+        </div>
+        <div class="chart-wrap">
+          <svg id="chart" role="img" aria-label="Mean and percentile latency against utilization"></svg>
+          <div id="tooltip" class="tooltip" hidden></div>
+        </div>
+        <p class="hint" id="chart-note"></p>
+      </div>
+
+      <div class="panel">
+        <h2>One queue or many?</h2>
+        <p class="hint">The same workers and traffic, with one shared queue versus a separate queue per worker (random load balancing).</p>
+        <div class="compare" id="compare"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Worker counts compared</h2>
+        <div class="table-scroll">
+          <table class="items">
+            <thead><tr><th>Workers</th><th class="num">Utilization</th><th class="num">Requests that wait</th><th class="num">Mean</th><th class="num" id="pct-head">p99</th><th>Target</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">Runs entirely in your browser. Inputs are stored in the page URL so you can share a plan.</footer>
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
